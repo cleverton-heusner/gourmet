@@ -1,12 +1,14 @@
 package br.com.gourmet.model;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 public class Prato {
 
     private String nome;
-    private List<Prato> pratos = new ArrayList<>();
+    private Queue<Prato> pratos = new LinkedList<>();
 
     public Prato() {
     }
@@ -23,7 +25,7 @@ public class Prato {
         this.pratos.add(prato);
     }
 
-    public List<Prato> getPratos() {
+    public Queue<Prato> getPratosFilhos() {
         return pratos;
     }
 

@@ -6,27 +6,34 @@ import br.com.gourmet.view.dialog.DialogoCategorizacaoPrato;
 import br.com.gourmet.view.dialog.DialogoDesistenciaAdivinhacao;
 import br.com.gourmet.view.dialog.DialogoTentativaAdivinhacao;
 
-import java.util.List;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.stream.Collectors;
 
 public class AdivinhacaoPratoController {
 
-    public void adivinharPrato(final List<Prato> pratos) {
-        for (int i = 0; i < pratos.size(); i++) {
-            String mensagemDialogoAdivinhacao = String.format("O prato que você pensou é %s?", pratos.get(i).getNome());
-            int resp = new DialogoTentativaAdivinhacao().mostrarEObterResposta(mensagemDialogoAdivinhacao);
+    private Prato prato;
+
+    public void adivinharPrato(final Queue<Prato> pratos) {
+        Iterator<Prato> iterator = ordenarPratosPorFilhos(pratos).iterator();
+
+        while (iterator.hasNext()) {
+            prato = iterator.next();
+            int resp = new DialogoTentativaAdivinhacao().mostrarEObterResposta(getMensagemDialogoAdivinhacao());
 
             if (resp == DialogoTentativaAdivinhacao.SIM) {
-                if (pratos.get(i).getPratos().isEmpty()) {
+                if (prato.getPratosFilhos().isEmpty()) {
                     new DialogoAcerto().mostrar();
                 } else {
-                    adivinharPrato(pratos.get(i).getPratos());
-                    break;
+                    adivinharPrato(prato.getPratosFilhos());
                 }
-            } else if (i == pratos.size() - 1) {
+                break;
+            } else if (!iterator.hasNext()) {
                 String nomePratoEscolhio = new DialogoDesistenciaAdivinhacao().mostrarELerValor();
-
-                String mensagemDialogo = String.format("%s é ______, mas %s não.", nomePratoEscolhio, pratos.get(i).getNome());
-                String nomePratoPaiEscolhido = new DialogoCategorizacaoPrato().comMensagem(mensagemDialogo)
+                String nomePratoPaiEscolhido = new DialogoCategorizacaoPrato()
+                        .comMensagem(getMensagemDialogoCategorizacao(nomePratoEscolhio))
                         .mostrarELerValor();
 
                 Prato pratoEscolhido = new Prato(nomePratoEscolhio);
@@ -36,5 +43,19 @@ public class AdivinhacaoPratoController {
                 break;
             }
         }
+    }
+
+    private Queue<Prato> ordenarPratosPorFilhos(final Queue<Prato> pratos) {
+        return pratos.stream()
+                .sorted(Comparator.comparing(Prato::getPratosFilhos, Comparator.comparing(p -> p.isEmpty())))
+                .collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    private String getMensagemDialogoAdivinhacao() {
+        return String.format("O prato que você pensou é %s?", prato.getNome());
+    }
+
+    private String getMensagemDialogoCategorizacao(final String nomePratoEscolhio) {
+        return String.format("%s é ______, mas %s não.", nomePratoEscolhio, prato.getNome());
     }
 }
